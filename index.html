@@ -52,6 +52,21 @@ body::after{
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 @keyframes blink{50%{opacity:0}}
 
+/* BOOT OVERLAY */
+#boot-overlay {
+  position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: opacity 0.5s ease;
+}
+.boot-prompt {
+  font-family: var(--crt); font-size: 24px; color: var(--p);
+  text-shadow: var(--glow); margin-bottom: 20px;
+}
+.boot-sub {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  letter-spacing: 0.2em; animation: pulse 1.5s infinite;
+}
+
 .shell{
   height:100vh;
   display:grid;
@@ -63,8 +78,7 @@ body::after{
 /* HEADER */
 header{
   display:flex;align-items:center;gap:14px;
-  padding:0 20px;
-  background:var(--bg2);
+  padding:0 20px; background:var(--bg2);
   border-bottom:1px solid var(--border2);
 }
 .logo{
@@ -119,6 +133,12 @@ canvas#wave{display:block;width:100%;height:32px}
 }
 .sb-section{padding:14px 16px;border-bottom:1px solid var(--border)}
 .sb-title{font-size:10px;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
+.monitor-box {
+  width:100%; aspect-ratio:16/9; background:var(--bg); border:1px solid var(--border2);
+  position:relative; overflow:hidden;
+}
+.monitor-box iframe { width:100%; height:100%; border:none; }
+
 .big-clock{
   font-family:var(--crt);font-size:44px;
   color:var(--p);text-shadow:var(--glow);
@@ -162,21 +182,14 @@ footer{
 footer a{color:var(--text3);text-decoration:none}
 footer a:hover{color:var(--p)}
 .f-uptime{color:var(--p2);text-shadow:var(--glow3)}
-
-/* HIDDEN YOUTUBE */
-#yt-audio{
-  position:fixed;bottom:-200px;left:-200px;
-  width:1px;height:1px;pointer-events:none;opacity:0;
-}
 </style>
 </head>
 <body>
 
-<!-- Replace VIDEO_ID with your YouTube video ID (the part after ?v= in the URL) -->
-<iframe id="yt-audio"
-  src="https://www.youtube.com/embed/UjlMEqTu2KI?autoplay=1&mute=0&controls=0&loop=1&playlist=UjlMEqTu2KI&modestbranding=1&rel=0"
-  allow="autoplay">
-</iframe>
+<div id="boot-overlay" onclick="startTerminal()">
+  <div class="boot-prompt">[ SYSTEM READY ]</div>
+  <div class="boot-sub">CLICK TO INITIALIZE SIGNAL FREQUENCIES</div>
+</div>
 
 <div class="shell">
 
@@ -208,6 +221,17 @@ footer a:hover{color:var(--p)}
         <div class="big-clock" id="big-clock">--:--:--</div>
         <div class="big-date" id="big-date">--- -- ----</div>
       </div>
+
+      <div class="sb-section">
+        <div class="sb-title">▸ signal.monitor</div>
+        <div class="monitor-box">
+          <iframe id="yt-audio"
+            src="https://www.youtube.com/embed/Nn87x5B26-c?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0"
+            allow="autoplay">
+          </iframe>
+        </div>
+      </div>
+
       <div class="sb-section">
         <div class="sb-title">▸ sys.status</div>
         <div class="stat-row"><span class="stat-k">signal</span><span class="stat-v">NOMINAL</span></div>
@@ -232,6 +256,19 @@ footer a:hover{color:var(--p)}
 </div>
 
 <script>
+/* AUDIO & BOOT LOGIC */
+function startTerminal() {
+  const overlay = document.getElementById('boot-overlay');
+  const yt = document.getElementById('yt-audio');
+  
+  overlay.style.opacity = '0';
+  setTimeout(() => overlay.style.display = 'none', 500);
+  
+  // Update the stream to unmute now that we have a user gesture[cite: 1]
+  // We use the direct embed for the live stream
+  yt.src = "https://www.youtube.com/embed/Nn87x5B26-c?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0";
+}
+
 /* CLOCK + UPTIME */
 const startTime = Date.now();
 const pad = n => String(n).padStart(2,'0');
@@ -261,6 +298,7 @@ let cols, rows, buildings = [], frame = 0;
 
 function buildCity() {
   const wrap = cityCanvas.parentElement;
+  if(!wrap) return;
   cols = Math.floor(wrap.clientWidth / CHAR_W);
   rows = Math.floor(wrap.clientHeight / CHAR_H);
   cityCanvas.width  = cols * CHAR_W;
@@ -287,7 +325,6 @@ function drawCity() {
         const isRoof = by === rows - b.h;
         const isMid  = bx === Math.floor(b.x + b.w / 2);
 
-        // antenna
         if (b.h > 10 && isMid && by === rows - b.h - 1) {
           ctx.fillStyle = '#39d353'; ctx.fillText('|', bx*CHAR_W, by*CHAR_H); continue;
         }
@@ -295,14 +332,12 @@ function drawCity() {
           ctx.fillStyle = '#39d353'; ctx.fillText('*', bx*CHAR_W, by*CHAR_H); continue;
         }
 
-        // roofline
         if (isRoof) {
           ctx.fillStyle = '#7ee787';
           const ch = bx===b.x ? '|' : bx===b.x+b.w-1 ? '|' : '_';
           ctx.fillText(ch, bx*CHAR_W, by*CHAR_H); continue;
         }
 
-        // windows
         if (bx > b.x && bx < b.x+b.w-1 && (bx+by)%2===0) {
           const flicker = (frame + bx*7 + by*13) % 200;
           const off = flicker < 4 && Math.random() > 0.6;
@@ -311,14 +346,12 @@ function drawCity() {
           ctx.fillText('|', bx*CHAR_W, by*CHAR_H); continue;
         }
 
-        // wall
         ctx.fillStyle = '#1a5c2a';
         ctx.fillText('|', bx*CHAR_W, by*CHAR_H);
       }
     }
   });
 
-  // ground
   ctx.fillStyle = '#7ee787';
   for (let gx = 0; gx < cols; gx++) {
     ctx.fillText('_', gx*CHAR_W, (rows-1)*CHAR_H);
