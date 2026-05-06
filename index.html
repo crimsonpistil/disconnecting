@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="6B74 // SIGNAL - terminal atmosphere">
+<title>[6B74] Reconnecting...</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060806;
+  --bg2:#0a0d0a;
+  --bg3:#0f130f;
+  --border:#172017;
+  --border2:#1f2b1f;
+  --text:#b8ccb8;
+  --text2:#7a977a;
+  --text3:#4a614a;
+  --text4:#2a3d2a;
+  --p:#7ee787;
+  --p2:#39d353;
+  --p3:#1a5c2a;
+  --p4:#0d2e15;
+  --amber:#d29922;
+  --red:#f85149;
+  --glow:0 0 10px rgba(126,231,135,.45);
+  --glow2:0 0 5px rgba(126,231,135,.25);
+  --glow3:0 0 3px rgba(126,231,135,.15);
+  --glow-amber:0 0 8px rgba(210,153,34,.5);
+  --mono:'JetBrains Mono','Courier New',monospace;
+  --crt:'VT323',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--mono);font-size:13px;
+  line-height:1.5;min-height:100vh;overflow:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:900;
+  background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.22) 2px,rgba(0,0,0,.22) 3px);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:899;
+  background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.75) 100%);
+}
+@keyframes flicker{
+  0%,100%{opacity:1}91%{opacity:1}92%{opacity:.93}93%{opacity:1}97%{opacity:.97}98%{opacity:1}
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes blink{50%{opacity:0}}
+
+.shell{
+  height:100vh;
+  display:grid;
+  grid-template-rows:42px 1fr 36px;
+  animation:flicker 10s infinite;
+  position:relative;z-index:1;
+}
+
+/* HEADER */
+header{
+  display:flex;align-items:center;gap:14px;
+  padding:0 20px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border2);
+}
+.logo{
+  font-family:var(--crt);font-size:20px;
+  color:var(--p);text-shadow:var(--glow);
+  text-decoration:none;letter-spacing:.05em;
+}
+.logo span{color:var(--text3);text-shadow:none}
+.logo:hover{color:var(--p2)}
+.h-sep{color:var(--text4);font-size:10px}
+.h-label{font-size:10px;color:var(--text3);letter-spacing:.15em;text-transform:uppercase}
+.h-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.onair{
+  font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--amber);text-shadow:var(--glow-amber);
+  display:flex;align-items:center;gap:6px;
+}
+.onair::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:var(--amber);box-shadow:var(--glow-amber);
+  animation:pulse 1.4s ease-in-out infinite;
+}
+.h-clock{font-family:var(--crt);font-size:18px;color:var(--p);text-shadow:var(--glow2);letter-spacing:.05em}
+
+/* MAIN */
+main{display:grid;grid-template-columns:1fr 280px;overflow:hidden}
+@media(max-width:700px){main{grid-template-columns:1fr}.sidebar{display:none}}
+
+/* ASCII PANEL */
+.ascii-panel{position:relative;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+.ascii-wrap{flex:1;position:relative;overflow:hidden}
+canvas#city{display:block;position:absolute;bottom:0;left:0}
+canvas#rain{position:absolute;inset:0;pointer-events:none;opacity:.5}
+.waveform-wrap{
+  padding:10px 16px;border-top:1px solid var(--border);
+  background:var(--bg2);flex-shrink:0;
+}
+.waveform-label{
+  font-size:10px;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;
+}
+.cursor{
+  display:inline-block;width:8px;height:13px;
+  background:var(--p);box-shadow:var(--glow);
+  animation:blink .9s steps(2) infinite;vertical-align:-2px;margin-left:3px;
+}
+canvas#wave{display:block;width:100%;height:32px}
+
+/* SIDEBAR */
+.sidebar{
+  border-left:1px solid var(--border2);background:var(--bg2);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sb-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sb-title{font-size:10px;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
+.big-clock{
+  font-family:var(--crt);font-size:44px;
+  color:var(--p);text-shadow:var(--glow);
+  line-height:1;text-align:center;letter-spacing:.05em;
+}
+.big-date{font-size:10px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-top:5px}
+.stat-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;
+}
+.stat-row:last-child{border-bottom:none}
+.stat-k{color:var(--text3)}
+.stat-v{color:var(--p);text-shadow:var(--glow3);font-weight:700}
+.stat-v.amber{color:var(--amber);text-shadow:var(--glow-amber)}
+.stat-v.dim{color:var(--text2);text-shadow:none}
+.log-wrap{
+  flex:1;overflow:hidden;padding:14px 16px;
+  display:flex;flex-direction:column;min-height:0;
+}
+.log-inner{
+  flex:1;overflow:hidden;
+  mask-image:linear-gradient(to bottom,transparent 0,black 20%,black 80%,transparent 100%);
+  position:relative;
+}
+#log-scroll{
+  display:flex;flex-direction:column;gap:3px;
+  position:absolute;bottom:0;width:100%;
+}
+.ll{font-size:10px;color:var(--text3);line-height:1.5;word-break:break-all}
+.ll .ts{color:var(--text4);margin-right:6px}
+.ll .ok{color:var(--p2)}
+.ll .warn{color:var(--amber)}
+.ll .err{color:var(--red)}
+
+/* FOOTER */
+footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;background:var(--bg2);border-top:1px solid var(--border2);
+  font-size:10px;color:var(--text4);letter-spacing:.1em;flex-wrap:wrap;gap:6px;
+}
+footer a{color:var(--text3);text-decoration:none}
+footer a:hover{color:var(--p)}
+.f-uptime{color:var(--p2);text-shadow:var(--glow3)}
+
+/* HIDDEN YOUTUBE */
+#yt-audio{
+  position:fixed;bottom:-200px;left:-200px;
+  width:1px;height:1px;pointer-events:none;opacity:0;
+}
+</style>
+</head>
+<body>
+
+<!-- Replace VIDEO_ID with your YouTube video ID (the part after ?v= in the URL) -->
+<iframe id="yt-audio"
+  src="https://www.youtube.com/embed/UjlMEqTu2KI?autoplay=1&mute=0&controls=0&loop=1&playlist=UjlMEqTu2KI&modestbranding=1&rel=0"
+  allow="autoplay">
+</iframe>
+
+<div class="shell">
+
+  <header>
+    <a class="logo" href="https://6b74.dev">[6B74]<span> :: signal</span></a>
+    <span class="h-sep">//</span>
+    <span class="h-label">terminal atmosphere</span>
+    <div class="h-right">
+      <span class="onair">on air</span>
+      <span class="h-clock" id="h-clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main>
+
+    <div class="ascii-panel">
+      <div class="ascii-wrap">
+        <canvas id="rain"></canvas>
+        <canvas id="city"></canvas>
+      </div>
+      <div class="waveform-wrap">
+        <div class="waveform-label">▸ signal.waveform<span class="cursor"></span></div>
+        <canvas id="wave"></canvas>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sb-section">
+        <div class="big-clock" id="big-clock">--:--:--</div>
+        <div class="big-date" id="big-date">--- -- ----</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-title">▸ sys.status</div>
+        <div class="stat-row"><span class="stat-k">signal</span><span class="stat-v">NOMINAL</span></div>
+        <div class="stat-row"><span class="stat-k">stream</span><span class="stat-v">ACTIVE</span></div>
+        <div class="stat-row"><span class="stat-k">uptime</span><span class="stat-v f-uptime" id="sb-uptime">00:00:00</span></div>
+        <div class="stat-row"><span class="stat-k">rain</span><span class="stat-v amber">HEAVY</span></div>
+        <div class="stat-row"><span class="stat-k">threat lvl</span><span class="stat-v dim">MIDNIGHT</span></div>
+      </div>
+      <div class="log-wrap">
+        <div class="sb-title">▸ event.log</div>
+        <div class="log-inner"><div id="log-scroll"></div></div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <span><a href="https://6b74.dev">[6B74]</a> · all frequencies nominal</span>
+    <span>session uptime <span class="f-uptime" id="ft-uptime">00:00:00</span></span>
+  </footer>
+
+</div>
+
+<script>
+/* CLOCK + UPTIME */
+const startTime = Date.now();
+const pad = n => String(n).padStart(2,'0');
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const DAYS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+
+function tick() {
+  const now = new Date();
+  const t = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('h-clock').textContent = t;
+  document.getElementById('big-clock').textContent = t;
+  document.getElementById('big-date').textContent =
+    `${DAYS[now.getDay()]} ${pad(now.getDate())} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  const e = Math.floor((Date.now() - startTime) / 1000);
+  const up = `${pad(Math.floor(e/3600))}:${pad(Math.floor(e%3600/60))}:${pad(e%60)}`;
+  document.getElementById('sb-uptime').textContent = up;
+  document.getElementById('ft-uptime').textContent = up;
+}
+setInterval(tick, 1000);
+tick();
+
+/* ASCII CITYSCAPE */
+const cityCanvas = document.getElementById('city');
+const ctx = cityCanvas.getContext('2d');
+const CHAR_W = 10, CHAR_H = 18;
+let cols, rows, buildings = [], frame = 0;
+
+function buildCity() {
+  const wrap = cityCanvas.parentElement;
+  cols = Math.floor(wrap.clientWidth / CHAR_W);
+  rows = Math.floor(wrap.clientHeight / CHAR_H);
+  cityCanvas.width  = cols * CHAR_W;
+  cityCanvas.height = rows * CHAR_H;
+  buildings = [];
+  let x = 0;
+  while (x < cols) {
+    const w = 3 + Math.floor(Math.random() * 7);
+    const h = 5 + Math.floor(Math.random() * Math.max(1, rows - 7));
+    buildings.push({ x, w, h });
+    x += w + 1;
+  }
+}
+
+function drawCity() {
+  ctx.fillStyle = '#060806';
+  ctx.fillRect(0, 0, cityCanvas.width, cityCanvas.height);
+  ctx.font = `${CHAR_H}px VT323, monospace`;
+  ctx.textBaseline = 'top';
+
+  buildings.forEach(b => {
+    for (let bx = b.x; bx < b.x + b.w && bx < cols; bx++) {
+      for (let by = rows - b.h; by < rows; by++) {
+        const isRoof = by === rows - b.h;
+        const isMid  = bx === Math.floor(b.x + b.w / 2);
+
+        // antenna
+        if (b.h > 10 && isMid && by === rows - b.h - 1) {
+          ctx.fillStyle = '#39d353'; ctx.fillText('|', bx*CHAR_W, by*CHAR_H); continue;
+        }
+        if (b.h > 13 && isMid && by === rows - b.h - 2) {
+          ctx.fillStyle = '#39d353'; ctx.fillText('*', bx*CHAR_W, by*CHAR_H); continue;
+        }
+
+        // roofline
+        if (isRoof) {
+          ctx.fillStyle = '#7ee787';
+          const ch = bx===b.x ? '|' : bx===b.x+b.w-1 ? '|' : '_';
+          ctx.fillText(ch, bx*CHAR_W, by*CHAR_H); continue;
+        }
+
+        // windows
+        if (bx > b.x && bx < b.x+b.w-1 && (bx+by)%2===0) {
+          const flicker = (frame + bx*7 + by*13) % 200;
+          const off = flicker < 4 && Math.random() > 0.6;
+          if (off) { ctx.fillStyle = '#0d2e15'; }
+          else { ctx.fillStyle = (by-(rows-b.h))%4 < 2 ? '#39d353' : '#1a5c2a'; }
+          ctx.fillText('|', bx*CHAR_W, by*CHAR_H); continue;
+        }
+
+        // wall
+        ctx.fillStyle = '#1a5c2a';
+        ctx.fillText('|', bx*CHAR_W, by*CHAR_H);
+      }
+    }
+  });
+
+  // ground
+  ctx.fillStyle = '#7ee787';
+  for (let gx = 0; gx < cols; gx++) {
+    ctx.fillText('_', gx*CHAR_W, (rows-1)*CHAR_H);
+  }
+}
+
+/* RAIN */
+const rainCanvas = document.getElementById('rain');
+const rctx = rainCanvas.getContext('2d');
+let drops = [];
+
+function initRain() {
+  rainCanvas.width  = cityCanvas.parentElement.clientWidth;
+  rainCanvas.height = cityCanvas.parentElement.clientHeight;
+  drops = [];
+  const count = Math.floor(rainCanvas.width / 14);
+  for (let i = 0; i < count; i++) {
+    drops.push({
+      x: Math.random() * rainCanvas.width,
+      y: Math.random() * rainCanvas.height,
+      speed: 4 + Math.random() * 8,
+      len: 8 + Math.random() * 20,
+      alpha: 0.12 + Math.random() * 0.3,
+    });
+  }
+}
+
+function drawRain() {
+  rctx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+  drops.forEach(d => {
+    rctx.beginPath();
+    rctx.strokeStyle = `rgba(126,231,135,${d.alpha})`;
+    rctx.lineWidth = 1;
+    rctx.moveTo(d.x, d.y);
+    rctx.lineTo(d.x-1, d.y+d.len);
+    rctx.stroke();
+    d.y += d.speed;
+    if (d.y > rainCanvas.height) { d.y = -d.len; d.x = Math.random()*rainCanvas.width; }
+  });
+}
+
+/* WAVEFORM */
+const waveCanvas = document.getElementById('wave');
+const wctx = waveCanvas.getContext('2d');
+
+function drawWave(t) {
+  const W = waveCanvas.parentElement.clientWidth;
+  const H = 32;
+  waveCanvas.width = W; waveCanvas.height = H;
+  wctx.clearRect(0, 0, W, H);
+  wctx.beginPath();
+  wctx.strokeStyle = '#7ee787';
+  wctx.shadowColor = '#7ee787';
+  wctx.shadowBlur = 6;
+  wctx.lineWidth = 1.5;
+  const mid = H/2;
+  for (let x = 0; x < W; x++) {
+    const ph = x/W*Math.PI*12 + t*0.04;
+    const y = mid + Math.sin(ph)*10 + Math.sin(ph*2.3+1.2)*4 + Math.sin(ph*0.7+t*0.02)*6;
+    x===0 ? wctx.moveTo(x,y) : wctx.lineTo(x,y);
+  }
+  wctx.stroke();
+}
+
+/* LOG */
+const LOG_LINES = [
+  {c:'ok',  m:'connection.established · handshake complete'},
+  {c:'ok',  m:'signal.lock confirmed · transmitting'},
+  {c:'info',m:'rain.sensor → HEAVY · visibility reduced'},
+  {c:'ok',  m:'keepalive → pong 12ms'},
+  {c:'info',m:'cityscape.render → nominal'},
+  {c:'ok',  m:'stream.health → all systems green'},
+  {c:'info',m:'window.matrix → 847 units lit'},
+  {c:'warn',m:'brief interference · self-corrected'},
+  {c:'ok',  m:'uplink stable · latency 8ms'},
+  {c:'info',m:'atmosphere.level → optimal'},
+  {c:'ok',  m:'keepalive → pong 9ms'},
+  {c:'info',m:'rain.intensity → increasing'},
+  {c:'ok',  m:'signal.check → NOMINAL'},
+  {c:'info',m:'antenna.status → operational'},
+  {c:'ok',  m:'keepalive → pong 11ms'},
+  {c:'warn',m:'packet drop 0.2% · within threshold'},
+  {c:'ok',  m:'recovered · stream continuous'},
+  {c:'info',m:'cityscape.lights → flickering sector 4'},
+  {c:'ok',  m:'keepalive → pong 14ms'},
+  {c:'info',m:'threat.level → LOW · all clear'},
+  {c:'ok',  m:'transmission nominal · stay sharp'},
+];
+
+let logIdx = 0;
+const logScroll = document.getElementById('log-scroll');
+
+function addLog() {
+  const e = LOG_LINES[logIdx++ % LOG_LINES.length];
+  const now = new Date();
+  const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const div = document.createElement('div');
+  div.className = 'll';
+  div.innerHTML = `<span class="ts">${ts}</span><span class="${e.c}">${e.m}</span>`;
+  logScroll.appendChild(div);
+  while (logScroll.children.length > 40) logScroll.removeChild(logScroll.firstChild);
+  logScroll.parentElement.scrollTop = logScroll.scrollHeight;
+}
+for (let i = 0; i < 8; i++) addLog();
+setInterval(addLog, 3500);
+
+/* RESIZE */
+function onResize() { buildCity(); initRain(); }
+window.addEventListener('resize', onResize);
+onResize();
+
+/* MAIN LOOP */
+let t = 0;
+function loop() {
+  frame++; t++;
+  drawCity();
+  drawRain();
+  drawWave(t);
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
