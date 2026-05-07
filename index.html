@@ -47,9 +47,9 @@ body::after{
   background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.75) 100%);
 }
 @keyframes flicker{
-  0%,100%{opacity:1}91%{opacity:1}92%{opacity:.93}93%{opacity:1}97%{opacity:.97}98%{opacity:1}
+  0%,100%{opacity:1}91%{opacity:1}92%{opacity:.99}93%{opacity:1}97%{opacity:.99}98%{opacity:1}
 }
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes pulse{0%,99%{opacity:1}50%{opacity:.25}}
 @keyframes blink{50%{opacity:0}}
 
 /* BOOT OVERLAY */
@@ -71,7 +71,7 @@ body::after{
   height:100vh;
   display:grid;
   grid-template-rows:42px 1fr 36px;
-  animation:flicker 10s infinite;
+  animation:flicker 15s infinite;
   position:relative;z-index:1;
 }
 
@@ -373,7 +373,7 @@ footer a:hover{color:var(--p)}
   <header>
     <a class="logo" href="https://6b74.dev">[6B74]</a>
     <span class="h-sep">//</span>
-    <span class="h-label">disconnect</span>
+    <span class="h-label">disconnect for a while...</span>
     <div class="mode-switch">
       <button class="mode-opt active" id="mode-listen">▸ LISTEN</button>
       <button class="mode-opt" id="mode-create">▸ CREATE</button>
