@@ -104,7 +104,7 @@ header{
 .h-clock{font-family:var(--crt);font-size:18px;color:var(--p);text-shadow:var(--glow2);letter-spacing:.05em}
 
 /* MAIN */
-main{display:grid;grid-template-columns:1fr 22vw;overflow:hidden}
+main{display:grid;grid-template-columns:1fr 20vw;overflow:hidden}
 @media(max-width:700px){main{grid-template-columns:1fr}.sidebar{display:none}}
 main.create-mode{grid-template-columns:1fr var(--seq-width, 620px)}
 
@@ -371,9 +371,9 @@ footer a:hover{color:var(--p)}
 <div class="shell">
 
   <header>
-    <a class="logo" href="https://6b74.dev">[6B74]<span> :: signal</span></a>
+    <a class="logo" href="https://6b74.dev">[6B74]</a>
     <span class="h-sep">//</span>
-    <span class="h-label">terminal atmosphere</span>
+    <span class="h-label">disconnect</span>
     <div class="mode-switch">
       <button class="mode-opt active" id="mode-listen">▸ LISTEN</button>
       <button class="mode-opt" id="mode-create">▸ CREATE</button>
