@@ -104,7 +104,7 @@ header{
 .h-clock{font-family:var(--crt);font-size:18px;color:var(--p);text-shadow:var(--glow2);letter-spacing:.05em}
 
 /* MAIN */
-main{display:grid;grid-template-columns:1fr 280px;overflow:hidden}
+main{display:grid;grid-template-columns:1fr 22vw;overflow:hidden}
 @media(max-width:700px){main{grid-template-columns:1fr}.sidebar{display:none}}
 main.create-mode{grid-template-columns:1fr var(--seq-width, 620px)}
 
@@ -524,21 +524,58 @@ const ctx = cityCanvas.getContext('2d');
 const CHAR_W = 10, CHAR_H = 18;
 let cols, rows, buildings = [], frame = 0;
 
+// Sky elements
+let moonX = 0, moonY = 0;
+let clouds = [];
+let shootingStar = null;
+let nextShootingStar = 0;
+
 function buildCity() {
   const wrap = cityCanvas.parentElement;
-  if(!wrap) return;
+  if (!wrap) return;
   cols = Math.floor(wrap.clientWidth / CHAR_W);
   rows = Math.floor(wrap.clientHeight / CHAR_H);
   cityCanvas.width  = cols * CHAR_W;
   cityCanvas.height = rows * CHAR_H;
+
+  // City only occupies bottom 25% - shorter, denser buildings
+  const cityRows = Math.floor(rows * 0.25);
   buildings = [];
   let x = 0;
   while (x < cols) {
-    const w = 3 + Math.floor(Math.random() * 7);
-    const h = 5 + Math.floor(Math.random() * Math.max(1, rows - 7));
+    const w = 2 + Math.floor(Math.random() * 5);
+    const h = 2 + Math.floor(Math.random() * Math.max(1, cityRows - 2));
     buildings.push({ x, w, h });
     x += w + 1;
   }
+
+  // Moon - upper right quadrant, fixed position
+  moonX = Math.floor(cols * 0.82);
+  moonY = Math.floor(rows * 0.12);
+
+  // Clouds - 3 at different heights and speeds
+  clouds = [
+    { x: Math.random() * cols, y: Math.floor(rows * 0.22), speed: 0.008, chars: '░▒░░▒░' },
+    { x: Math.random() * cols, y: Math.floor(rows * 0.32), speed: 0.005, chars: '░░▒▒░░░' },
+    { x: Math.random() * cols, y: Math.floor(rows * 0.42), speed: 0.012, chars: '░▒░▒░' },
+  ];
+
+  nextShootingStar = frame + 400 + Math.floor(Math.random() * 600);
+}
+
+function spawnShootingStar() {
+  // starts upper-left area, travels diagonally down-right
+  const startCol = Math.floor(Math.random() * (cols * 0.5));
+  const startRow = Math.floor(Math.random() * (rows * 0.3));
+  shootingStar = {
+    x: startCol,
+    y: startRow,
+    dx: 0.18,   // cols per frame
+    dy: 0.08,   // rows per frame
+    life: 0,
+    maxLife: 38,
+    tail: [],
+  };
 }
 
 function drawCity() {
@@ -547,16 +584,80 @@ function drawCity() {
   ctx.font = `${CHAR_H}px VT323, monospace`;
   ctx.textBaseline = 'top';
 
+  const cityRows = Math.floor(rows * 0.25);
+
+  // MOON
+  const moonChars = ['◯', '○', '◌'];
+  ctx.fillStyle = '#c8e0a0';
+  ctx.shadowColor = '#c8e0a0';
+  ctx.shadowBlur = 18;
+  ctx.font = `${CHAR_H * 2.2}px VT323, monospace`;
+  ctx.fillText('◯', moonX * CHAR_W - CHAR_W, moonY * CHAR_H);
+  ctx.shadowBlur = 0;
+  ctx.font = `${CHAR_H}px VT323, monospace`;
+
+  // Moon glow - faint halo ring
+  ctx.fillStyle = 'rgba(200,224,160,0.06)';
+  ctx.beginPath();
+  ctx.arc(moonX * CHAR_W + CHAR_W * 0.5, moonY * CHAR_H + CHAR_H * 1.1, CHAR_H * 2.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // CLOUDS - drift slowly right, wrap around
+  clouds.forEach(cloud => {
+    cloud.x += cloud.speed;
+    if (cloud.x > cols + cloud.chars.length) cloud.x = -cloud.chars.length;
+
+    const alpha = 0.35 + Math.sin(frame * 0.01 + cloud.y) * 0.08;
+    ctx.fillStyle = `rgba(180,220,180,${alpha})`;
+    for (let i = 0; i < cloud.chars.length; i++) {
+      const cx = (Math.floor(cloud.x) + i) % cols;
+      if (cx >= 0 && cx < cols) {
+        ctx.fillText(cloud.chars[i], cx * CHAR_W, cloud.y * CHAR_H);
+      }
+    }
+  });
+
+  // SHOOTING STAR
+  if (frame >= nextShootingStar && !shootingStar) {
+    spawnShootingStar();
+  }
+
+  if (shootingStar) {
+    shootingStar.x += shootingStar.dx;
+    shootingStar.y += shootingStar.dy;
+    shootingStar.life++;
+
+    // tail positions
+    shootingStar.tail.push({ x: shootingStar.x, y: shootingStar.y });
+    if (shootingStar.tail.length > 7) shootingStar.tail.shift();
+
+    // draw tail fading out
+    shootingStar.tail.forEach((pos, i) => {
+      const alpha = (i / shootingStar.tail.length) * 0.7;
+      ctx.fillStyle = `rgba(200,240,200,${alpha})`;
+      const ch = i === shootingStar.tail.length - 1 ? '*' : '.';
+      ctx.fillText(ch, Math.floor(pos.x) * CHAR_W, Math.floor(pos.y) * CHAR_H);
+    });
+
+    if (shootingStar.life >= shootingStar.maxLife ||
+        shootingStar.x >= cols || shootingStar.y >= rows * 0.6) {
+      shootingStar = null;
+      nextShootingStar = frame + 500 + Math.floor(Math.random() * 800);
+    }
+  }
+
+  // CITY BUILDINGS - bottom 25%
   buildings.forEach(b => {
     for (let bx = b.x; bx < b.x + b.w && bx < cols; bx++) {
       for (let by = rows - b.h; by < rows; by++) {
         const isRoof = by === rows - b.h;
         const isMid  = bx === Math.floor(b.x + b.w / 2);
 
-        if (b.h > 10 && isMid && by === rows - b.h - 1) {
+        // small antenna on taller buildings
+        if (b.h > 5 && isMid && by === rows - b.h - 1) {
           ctx.fillStyle = '#39d353'; ctx.fillText('|', bx*CHAR_W, by*CHAR_H); continue;
         }
-        if (b.h > 13 && isMid && by === rows - b.h - 2) {
+        if (b.h > 7 && isMid && by === rows - b.h - 2) {
           ctx.fillStyle = '#39d353'; ctx.fillText('*', bx*CHAR_W, by*CHAR_H); continue;
         }
 
@@ -580,6 +681,7 @@ function drawCity() {
     }
   });
 
+  // GROUND LINE
   ctx.fillStyle = '#7ee787';
   for (let gx = 0; gx < cols; gx++) {
     ctx.fillText('_', gx*CHAR_W, (rows-1)*CHAR_H);
@@ -595,14 +697,14 @@ function initRain() {
   rainCanvas.width  = cityCanvas.parentElement.clientWidth;
   rainCanvas.height = cityCanvas.parentElement.clientHeight;
   drops = [];
-  const count = Math.floor(rainCanvas.width / 14);
+  const count = Math.floor(rainCanvas.width / 22);
   for (let i = 0; i < count; i++) {
     drops.push({
       x: Math.random() * rainCanvas.width,
       y: Math.random() * rainCanvas.height,
-      speed: 4 + Math.random() * 8,
-      len: 8 + Math.random() * 20,
-      alpha: 0.12 + Math.random() * 0.3,
+      speed: 3 + Math.random() * 6,
+      len: 6 + Math.random() * 14,
+      alpha: 0.08 + Math.random() * 0.18,
     });
   }
 }
