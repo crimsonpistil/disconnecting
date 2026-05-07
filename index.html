@@ -108,14 +108,28 @@ main{display:grid;grid-template-columns:1fr 280px;overflow:hidden}
 @media(max-width:700px){main{grid-template-columns:1fr}.sidebar{display:none}}
 main.create-mode{grid-template-columns:1fr var(--seq-width, 620px)}
 
-/* RESIZE SLIDER */
-.resize-bar{
-  background:var(--bg2);border-bottom:1px solid var(--border2);
-  padding:6px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+/* DRAG HANDLE - left edge of sequencer panel */
+.drag-handle{
+  position:absolute;
+  left:-5px;top:0;bottom:0;
+  width:10px;
+  cursor:col-resize;
+  z-index:10;
+  display:flex;align-items:center;justify-content:center;
 }
-.resize-bar label{font-size:10px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
-.resize-bar input[type=range]{flex:1;width:auto}
-.resize-bar .resize-val{font-family:var(--crt);font-size:16px;color:var(--p);text-shadow:var(--glow2);min-width:42px;text-align:right}
+.drag-handle::before{
+  content:'';
+  width:3px;height:48px;
+  background:var(--border2);
+  border-radius:2px;
+  transition:background .15s, box-shadow .15s;
+}
+.drag-handle:hover::before,.drag-handle.dragging::before{
+  background:var(--p3);
+  box-shadow:0 0 6px rgba(126,231,135,.3);
+}
+/* make seq-sidebar position:relative so handle can anchor to it */
+.seq-sidebar{position:relative}
 
 /* ASCII PANEL */
 .ascii-panel{position:relative;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
@@ -442,11 +456,7 @@ footer a:hover{color:var(--p)}
         <span class="rec-dot" id="rec-dot"></span>
       </div>
 
-      <div class="resize-bar">
-        <label>▸ panel width</label>
-        <input type="range" id="seq-resize" min="400" max="1100" value="620" step="10">
-        <span class="resize-val" id="resize-val">620</span>
-      </div>
+      <div class="drag-handle" id="drag-handle"></div>
 
       <div class="seq-body">
         <div class="sec-label">patterns</div>
@@ -711,12 +721,56 @@ function setMode(mode) {
   }
 }
 
-/* RESIZE SLIDER */
-document.getElementById('seq-resize').addEventListener('input', function() {
-  const val = parseInt(this.value);
-  document.getElementById('resize-val').textContent = val;
-  document.querySelector('main').style.setProperty('--seq-width', val + 'px');
-});
+/* DRAG HANDLE RESIZE */
+(function() {
+  const handle = document.getElementById('drag-handle');
+  const mainEl = document.querySelector('main');
+  let dragging = false;
+  let startX = 0;
+  let startWidth = 620;
+
+  handle.addEventListener('mousedown', e => {
+    dragging = true;
+    startX = e.clientX;
+    startWidth = parseInt(getComputedStyle(mainEl).getPropertyValue('--seq-width')) || 620;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = startX - e.clientX; // drag left = bigger, drag right = smaller
+    const newWidth = Math.max(340, Math.min(window.innerWidth - 200, startWidth + delta));
+    mainEl.style.setProperty('--seq-width', newWidth + 'px');
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+
+  // touch support
+  handle.addEventListener('touchstart', e => {
+    dragging = true;
+    startX = e.touches[0].clientX;
+    startWidth = parseInt(mainEl.style.getPropertyValue('--seq-width')) || 620;
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const delta = startX - e.touches[0].clientX;
+    const newWidth = Math.max(340, Math.min(window.innerWidth - 200, startWidth + delta));
+    mainEl.style.setProperty('--seq-width', newWidth + 'px');
+  });
+
+  document.addEventListener('touchend', () => { dragging = false; });
+})();
 
 /* ============================================================
    SEQUENCER ENGINE
